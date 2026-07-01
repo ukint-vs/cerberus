@@ -157,11 +157,11 @@ for PROG_ID in $ALL_PROGRAM_IDS; do
     "/tmp/van-review-thread-$PROG_ID.json"
 
   # Get app handle for chat lookup
-  APP_HANDLE=$(jq -r '.data.applicationById?.handle // ""' "/tmp/van-app-$PROG_ID.json")
-  APP_GITHUB=$(jq -r '.data.applicationById?.githubUrl // ""' "/tmp/van-app-$PROG_ID.json")
-  APP_OWNER=$(jq -r '.data.applicationById?.owner // ""' "/tmp/van-app-$PROG_ID.json")
-  APP_STATUS=$(jq -r '.data.applicationById?.status // "unknown"' "/tmp/van-app-$PROG_ID.json")
-  APP_JOINED=$(jq -r '.data.applicationById?.joinedAt // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_HANDLE=$(jq -r '.data.applicationByProgramId?.handle // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_GITHUB=$(jq -r '.data.applicationByProgramId?.githubUrl // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_OWNER=$(jq -r '.data.applicationByProgramId?.owner // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_STATUS=$(jq -r '.data.applicationByProgramId?.status // "unknown"' "/tmp/van-app-$PROG_ID.json")
+  APP_JOINED=$(jq -r '.data.applicationByProgramId?.joinedAt // ""' "/tmp/van-app-$PROG_ID.json")
 
   # Fetch last 10 chat messages from this app's handle
   if [ -n "$APP_HANDLE" ]; then
@@ -181,11 +181,11 @@ for PROG_ID in $ALL_PROGRAM_IDS; do
   echo "$NEW_COMMENTED" | grep -q "$PROG_ID" && REVIEW_LANES="${REVIEW_LANES}Commented "
 
   # Get the review summary for this program
-  fetch "query { reviewSummaryByProgramId(programId:\"$PROG_ID\") { reviewStatus manualOverride displayRevision submissionRevision activeRequestRevision latestVerdict latestReason } }" \
+  fetch "query { reviewSummaryByProgramId(programId:\"$PROG_ID\") { programId reviewStatus manualOverride displayRevision submissionRevision activeRequestRevision latestVerdict latestReason } }" \
     "/tmp/van-rs-summary-$PROG_ID.json"
 
   # Get linked project review (if any)
-  PROJECT_REVIEW_ID=$(jq -r '.data.reviewSummaryByProgramId?.projectReviewId // ""' "/tmp/van-rs-summary-$PROG_ID.json" 2>/dev/null || echo "")
+  PROJECT_REVIEW_ID=$(jq -r --arg prog "$PROG_ID" '.data.allProjectReviewSummaries.nodes[]? | select(.linkedProgramId == $prog) | .projectReviewId' /tmp/van-pr-summaries.json 2>/dev/null | head -1)
   if [ -n "$PROJECT_REVIEW_ID" ]; then
     fetch "query { allProjectReviewSummaries(condition:{projectReviewId:\"$PROJECT_REVIEW_ID\",hidden:false,tombstoned:false},first:1) { nodes { projectReviewId owner githubUrl idea status latestGuidanceOutcome latestGuidance linkedProgramId } } }" \
       "/tmp/van-pr-$PROG_ID.json"
@@ -322,16 +322,16 @@ $PR_NEEDING_REVIEW"
 **GitHub:** $PR_GITHUB
 
 **Review thread:**"
-      PR_COMMENTS=$(jq -r '.data.allProjectReviewComments.nodes[]? | "  - @\(.author): \(.body[0:200])" /tmp/van-pr-detail-$PR_ID.json 2>/dev/null || echo "  (none)")
+      PR_COMMENTS=$(jq -r '.data.allProjectReviewComments.nodes[]? | "  - @\(.author): \(.body[0:200])"' "/tmp/van-pr-detail-$PR_ID.json" 2>/dev/null || echo "  (none)")
       REPORT+="
 ${PR_COMMENTS}"
-      PR_GUIDANCES=$(jq -r '.data.allProjectReviewGuidances.nodes[]? | "  - Guidance: \(.outcome) by \(.reviewer): \(.body[0:100])" /tmp/van-pr-detail-$PR_ID.json 2>/dev/null || echo "  (none)")
+      PR_GUIDANCES=$(jq -r '.data.allProjectReviewGuidances.nodes[]? | "  - Guidance: \(.outcome) by \(.reviewer): \(.body[0:100])"' "/tmp/van-pr-detail-$PR_ID.json" 2>/dev/null || echo "  (none)")
       REPORT+="
 ${PR_GUIDANCES}"
 
       # Chat context
-      PR_CHAT=$(jq -r '.data.allChatMessages.nodes[]? | "  [\(.substrateBlockNumber)] @\(.authorHandle): \(.body[0:150])" /tmp/van-pr-chat-$PR_ID.json 2>/dev/null || echo "  (none)")
-      PR_COACH=$(jq -r '.data.allChatMessages.nodes[]? | "  [\(.substrateBlockNumber)] @\(.authorHandle): \(.body[0:150])" /tmp/van-pr-coach-$PR_ID.json 2>/dev/null || echo "  (none)")
+      PR_CHAT=$(jq -r '.data.allChatMessages.nodes[]? | "  [\(.substrateBlockNumber)] @\(.authorHandle): \(.body[0:150])"' "/tmp/van-pr-chat-$PR_ID.json" 2>/dev/null || echo "  (none)")
+      PR_COACH=$(jq -r '.data.allChatMessages.nodes[]? | "  [\(.substrateBlockNumber)] @\(.authorHandle): \(.body[0:150])"' "/tmp/van-pr-coach-$PR_ID.json" 2>/dev/null || echo "  (none)")
       REPORT+="
 **Last 10 messages from builder:**
 ${PR_CHAT}
