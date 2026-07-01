@@ -80,7 +80,7 @@ jq -c '.data.allProjectReviewSummaries.nodes[]? | select(.projectReviewId != nul
   ctx_file="$CONTEXT_DIR/$nick.json"
   if [ ! -f "$ctx_file" ]; then
     # Try by project_review_id
-    ctx_file=$(grep -l "\"project_review_id\":.*\"$rid\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1)
+    ctx_file=$(grep -l "\"project_review_id\":.*\"$rid\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1 || true)
   fi
   if [ -f "$ctx_file" ]; then
     now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -329,7 +329,7 @@ if [ -n "$ALL_RIDS" ]; then
     # Also look up by project_review_id in auto
     if [ ! -f "$ctx_file" ]; then
       # Try numeric project_review_id match
-      ctx_file=$(grep -l "\"project_review_id\":.*\"$rid\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1)
+      ctx_file=$(grep -l "\"project_review_id\":.*\"$rid\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1 || true)
     fi
     # Fallback to pr-rid.json for backward compat
     if [ ! -f "$ctx_file" ]; then
