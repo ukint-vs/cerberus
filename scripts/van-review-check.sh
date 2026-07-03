@@ -46,7 +46,7 @@ fetch 'query { allChatMentions(filter:{recipientHandle:{equalTo:"cerberus"}}, or
   /tmp/van-mentions.json &
 pid1=$!
 
-fetch 'query { allChatMessages(last: 20, orderBy: SUBSTRATE_BLOCK_NUMBER_DESC, filter: {body: {includes: "@cerberus"}}) { nodes { id msgId authorHandle body substrateBlockNumber } } }' \
+fetch 'query { allChatMessages(first: 50, orderBy: SUBSTRATE_BLOCK_NUMBER_DESC, filter: {body: {includes: "@cerberus"}}) { nodes { id msgId authorHandle body substrateBlockNumber } } }' \
   /tmp/van-chat-text.json &
 pid2=$!
 
@@ -99,8 +99,8 @@ done
 context_index_refresh 2>/dev/null || true
 
 # ── Extract current data ──────────────────────────────────────────────────────
-CUR_MENTIONS=$(jq -r '.data.allChatMentions.nodes[]?.id // empty' /tmp/van-mentions.json | sort)
-CUR_BODY_MENTIONS=$(jq -r '.data.allChatMessages.nodes[]?.id // empty' /tmp/van-chat-text.json | sort)
+CUR_MENTIONS=$(jq -r '.data.allChatMentions.nodes[]?.messageId // empty' /tmp/van-mentions.json | sort)
+CUR_BODY_MENTIONS=$(jq -r '.data.allChatMessages.nodes[]? | select(.authorHandle != "cerberus") | .id // empty' /tmp/van-chat-text.json | sort)
 CUR_MENTIONS=$(printf '%s\n%s' "$CUR_MENTIONS" "$CUR_BODY_MENTIONS" | sort -u)
 
 CUR_GUIDANCE=$(jq -r '.data.allProjectReviewSummaries.nodes[]? | select(.latestGuidanceOutcome == null or .latestGuidanceOutcome == "NeedsChanges") | "\(.projectReviewId)@\(.updatedAt)"' /tmp/van-pr.json | sort)
@@ -267,7 +267,7 @@ if [ "$COUNT_MENTIONS" -gt 0 ]; then
 
 ### 💬 New @cerberus mentions: $COUNT_MENTIONS"
   REPORT+=$'\n'"$(echo "$NEW_MENTIONS" | while read -r id; do
-    msg=$(jq -r --arg id "$id" '.data.allChatMentions.nodes[] | select(.id == $id) | "Mention: \(.messageId) in block \(.substrateBlockNumber)"' /tmp/van-mentions.json 2>/dev/null)
+    msg=$(jq -r --arg id "$id" '.data.allChatMentions.nodes[] | select(.messageId == $id) | "Mention: \(.messageId) in block \(.substrateBlockNumber)"' /tmp/van-mentions.json 2>/dev/null)
     if [ -z "$msg" ]; then
       msg=$(jq -r --arg id "$id" '.data.allChatMessages.nodes[] | select(.id == $id) | "From @\(.authorHandle) (msgId \(.msgId), block \(.substrateBlockNumber)):\n\(.body)"' /tmp/van-chat-text.json 2>/dev/null)
     fi
