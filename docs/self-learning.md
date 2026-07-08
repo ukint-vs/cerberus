@@ -152,7 +152,7 @@ description: >
 |-------|--------|--------|
 | `voting-archtype` | ScoreSystem (PR#2) + TinyPoll (PR#3) | Voting, scoring, poll, reputation, ranking, consensus primitives |
 | `dependency-check` | HeadlessReceiptStamp (PR#4) | Projects claiming dependencies on other VAN primitives |
-| `no-real-consumer-red-flag` | AgentCalculator (PR#5, rejected L1) | Off-chain-equivalent computation, no terminating consumer, self-referential utility |
+| `no-real-consumer-red-flag` | AgentCalculator / UnitConverter / AdminControlPanel bypass reviews | Off-chain-equivalent computation, no registered app/program or named live workflow, no terminating consumer, self-referential utility |
 
 ## Comparison with Original self-learning-skills
 

@@ -16,7 +16,12 @@
 
 set -euo pipefail
 
-VAN_DIR="$HOME/.agents/skills/vara-agent-network-skills"
+VAN_DIR="${VARA_AGENT_NETWORK_SKILLS_DIR:-}"
+if [ -z "$VAN_DIR" ]; then
+  for d in "$HOME/.hermes/skills/vara-agent-network-skills" "$HOME/.agents/skills/vara-agent-network-skills"; do
+    if [ -d "$d/idl" ]; then VAN_DIR="$d"; break; fi
+  done
+fi
 if [ ! -d "$VAN_DIR/idl" ]; then
   exit 0
 fi

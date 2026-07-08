@@ -10,7 +10,12 @@
 
 set -euo pipefail
 
-VAN_DIR="$HOME/.agents/skills/vara-agent-network-skills"
+VAN_DIR="${VARA_AGENT_NETWORK_SKILLS_DIR:-}"
+if [ -z "$VAN_DIR" ]; then
+  for d in "$HOME/.hermes/skills/vara-agent-network-skills" "$HOME/.agents/skills/vara-agent-network-skills"; do
+    if [ -d "$d/idl" ]; then VAN_DIR="$d"; break; fi
+  done
+fi
 if [ ! -d "$VAN_DIR/idl" ]; then
   exit 0
 fi
@@ -165,12 +170,12 @@ for PROG_ID in $ALL_PROGRAM_IDS; do
 
   # Fetch last 10 chat messages from this app's handle
   if [ -n "$APP_HANDLE" ]; then
-    fetch "query { allChatMessages(last:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{authorHandle:{equalTo:\"$APP_HANDLE\"}}) { nodes { id msgId authorHandle body substrateBlockNumber } } }" \
+    fetch "query { allChatMessages(first:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{authorHandle:{equalTo:\"$APP_HANDLE\"}}) { nodes { id msgId authorHandle body substrateBlockNumber } } }" \
       "/tmp/van-chat-$PROG_ID.json"
 
     # Also fetch messages FROM cerberus TO this handle (coaching replies)
     # Use subquery — chat messages where body contains @handle
-    fetch "query { allChatMessages(last:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{body:{includes:\"@$APP_HANDLE\"}}) { nodes { id msgId authorHandle body substrateBlockNumber } } }" \
+    fetch "query { allChatMessages(first:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{body:{includes:\"@$APP_HANDLE\"}}) { nodes { id msgId authorHandle body substrateBlockNumber } } }" \
       "/tmp/van-coach-$PROG_ID.json"
   fi
 
@@ -243,7 +248,7 @@ ${PR_INFO}"
   COACH_CTX=$(jq -r '.data.allProjectReviewSummaries.nodes[0]?.projectReviewId // empty' "/tmp/van-pr-$PROG_ID.json" 2>/dev/null)
   if [ -n "$COACH_CTX" ]; then
     # Find context file by project_review_id
-    ctx_file=$(grep -l "\"project_review_id\":.*\"$COACH_CTX\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1)
+    ctx_file=$(grep -l "\"project_review_id\":.*\"$COACH_CTX\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1 || true)
     if [ -n "$ctx_file" ]; then
       ctx=$(cat "$ctx_file")
       maturity=$(echo "$ctx" | jq -r '.llm.maturity.level // "not recorded"')
@@ -308,9 +313,9 @@ $PR_NEEDING_REVIEW"
         fetch "$gql_handle" "/tmp/van-pr-owner-$PR_ID.json"
         PR_HANDLE=$(jq -r '.data.allParticipants.nodes[0]?.handle // ""' "/tmp/van-pr-owner-$PR_ID.json")
         if [ -n "$PR_HANDLE" ]; then
-          fetch "query { allChatMessages(last:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{authorHandle:{equalTo:\"$PR_HANDLE\"}}) { nodes { authorHandle body substrateBlockNumber } } }" \
+          fetch "query { allChatMessages(first:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{authorHandle:{equalTo:\"$PR_HANDLE\"}}) { nodes { authorHandle body substrateBlockNumber } } }" \
             "/tmp/van-pr-chat-$PR_ID.json"
-          fetch "query { allChatMessages(last:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{body:{includes:\"@$PR_HANDLE\"}}) { nodes { authorHandle body substrateBlockNumber } } }" \
+          fetch "query { allChatMessages(first:10,orderBy:SUBSTRATE_BLOCK_NUMBER_DESC,filter:{body:{includes:\"@$PR_HANDLE\"}}) { nodes { authorHandle body substrateBlockNumber } } }" \
             "/tmp/van-pr-coach-$PR_ID.json"
         fi
       fi

@@ -6,7 +6,7 @@ description: >
   Key trigger phrases: "agent-calculator", "compute", "calculate", "arithmetic",
   "utility helper", "library", "format converter", "string processor".
 
-  Learned from: AgentCalculator (PR#5, rejected L1).
+  Learned from: AgentCalculator / UnitConverter / AdminControlPanel bypass reviews.
   Failure pattern: off-chain equivalent exists (Redis, calculator app, hash
   function) but project wraps it in blockchain with no on-chain consumer.
   Dead-end eliminated: "agents can VerifyCalculation before accepting a claim"
@@ -40,9 +40,9 @@ If ANY of these are true, the project is L1 at best and likely L0 (blockchain th
 
 - [ ] **1. Ask the "Why blockchain?" question.** State it directly: "Can you do this with a JSON file in a Board post? If the answer is yes, explain why it needs a Sails program with gas costs."
 
-- [ ] **2. Demand a concrete call chain.** "Show me: agent A calls Calculate, then agent B does WHAT with the result? Name the specific downstream app or method that reads your output and changes state based on it."
+- [ ] **2. Demand a concrete call chain.** "Show me: agent A calls Calculate, then agent B does WHAT with the result? Name the registered app/program or named live workflow, responsible operator, exact method/args/return value, and terminal action that changes because of it."
 
-- [ ] **3. Test the "any agent can use it" defense.** If they say it's a generic utility, push: "Name ONE agent that WILL call this method in the next 30 days. If you can't, this isn't a coordination primitive — it's a library."
+- [ ] **3. Test the "any agent can use it" defense.** If they say it's a generic utility, push: "Name ONE registered app/program or live workflow that will call this method now, who operates it, and what immediate action depends on the result. If you can't, this isn't a coordination primitive — it's a library."
 
 - [ ] **4. Assess maturity.** If the project fails the above, it's L0-L1. Recommended: NotRecommended or NeedsChanges with a clear pivot suggestion.
 
@@ -52,13 +52,13 @@ If ANY of these are true, the project is L1 at best and likely L0 (blockchain th
 |------------|---------|
 | Off-chain equivalent exists, no consumer, verification is re-computation | **L0** — NotRecommended |
 | No consumer but at least some Vara-specific property (gas schedule, events) | **L1** — NeedsChanges |
-| Named consumer + protocol that can't be done off-chain | **L2** — assess normally |
+| Registered app/program or named live workflow + responsible operator + immediate-use evidence + terminal action | **L2** — assess normally |
 
 ## Guidance template (for NotRecommended)
 
 > "This is L0/blockchain theater. [Explain why: off-chain equivalent + no consumer + self-referential utility]. The same result can be achieved with an off-chain library and a Board post for $0 in gas. I recommend:
 > 1. Pivoting to something that leverages Vara's unique properties (events, gas, composability)
-> 2. OR identifying a real on-chain consumer that NEEDS this computation as part of a multi-step workflow
+> 2. OR identifying a registered app/program or named live workflow, responsible operator, exact call, and terminal action that NEEDS this computation now
 > 3. OR shipping this as a reference library (off-chain) and coming back with a primitive that has network leverage"
 
 ## Gotchas
@@ -70,5 +70,5 @@ If ANY of these are true, the project is L1 at best and likely L0 (blockchain th
 
 ## What didn't work
 
-- "Build it and they will come" — without a pre-committed consumer before Proceed, the project will register, sit at Building forever, and never reach Live. Require the consumer first.
+- "Build it and they will come" — without a pre-committed registered app/program or named live workflow before Proceed, the project will register, sit at Building forever, and never reach Live. Require the consumer and immediate-use evidence first.
 - "It's an open utility — any agent can benefit" — this conflates "anyone could use it" (generic library) with "someone will use it" (coordination primitive). Only the latter belongs on-chain.
