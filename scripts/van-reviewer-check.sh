@@ -41,7 +41,7 @@ fetch() {
 }
 
 # ── Step 1: Fetch review summaries ───────────────────────────────────────────
-fetch 'query { allReviewSummaries(filter:{tombstoned:{equalTo:false}},orderBy:UPDATED_AT_ASC,first:50) {
+fetch 'query { allReviewSummaries(filter:{tombstoned:{equalTo:false}},orderBy:UPDATED_AT_DESC,first:50) {
   nodes {
     programId reviewStatus displayRevision submissionRevision
     activeRequestRevision activeRequestAcknowledged latestVerdict latestReason
@@ -181,16 +181,22 @@ for PROG_ID in $ALL_PROGRAM_IDS; do
 
   # Check which lanes this program appears in
   REVIEW_LANES=""
-  echo "$NEW_SUBMITTED" | grep -q "$PROG_ID" && REVIEW_LANES="${REVIEW_LANES}Submitted "
-  echo "$NEW_REQUESTED" | grep -q "$PROG_ID" && REVIEW_LANES="${REVIEW_LANES}Requested "
-  echo "$NEW_COMMENTED" | grep -q "$PROG_ID" && REVIEW_LANES="${REVIEW_LANES}Commented "
+  if [[ $'\n'"$NEW_SUBMITTED"$'\n' == *$'\n'"$PROG_ID@"* ]]; then
+    REVIEW_LANES="${REVIEW_LANES}Submitted "
+  fi
+  if [[ $'\n'"$NEW_REQUESTED"$'\n' == *$'\n'"$PROG_ID@"* ]]; then
+    REVIEW_LANES="${REVIEW_LANES}Requested "
+  fi
+  if [[ $'\n'"$NEW_COMMENTED"$'\n' == *$'\n'"$PROG_ID@"* ]]; then
+    REVIEW_LANES="${REVIEW_LANES}Commented "
+  fi
 
   # Get the review summary for this program
   fetch "query { reviewSummaryByProgramId(programId:\"$PROG_ID\") { programId reviewStatus manualOverride displayRevision submissionRevision activeRequestRevision latestVerdict latestReason } }" \
     "/tmp/van-rs-summary-$PROG_ID.json"
 
   # Get linked project review (if any)
-  PROJECT_REVIEW_ID=$(jq -r --arg prog "$PROG_ID" '.data.allProjectReviewSummaries.nodes[]? | select(.linkedProgramId == $prog) | .projectReviewId' /tmp/van-pr-summaries.json 2>/dev/null | head -1)
+  PROJECT_REVIEW_ID=$(jq -r --arg prog "$PROG_ID" '.data.allProjectReviewSummaries.nodes[]? | select(.linkedProgramId == $prog) | .projectReviewId' /tmp/van-pr-summaries.json 2>/dev/null | head -1 || true)
   if [ -n "$PROJECT_REVIEW_ID" ]; then
     fetch "query { allProjectReviewSummaries(condition:{projectReviewId:\"$PROJECT_REVIEW_ID\",hidden:false,tombstoned:false},first:1) { nodes { projectReviewId owner githubUrl idea status latestGuidanceOutcome latestGuidance linkedProgramId } } }" \
       "/tmp/van-pr-$PROG_ID.json"
@@ -245,7 +251,7 @@ ${PR_INFO}"
   fi
 
   # Coach's project context (ledger)
-  COACH_CTX=$(jq -r '.data.allProjectReviewSummaries.nodes[0]?.projectReviewId // empty' "/tmp/van-pr-$PROG_ID.json" 2>/dev/null)
+  COACH_CTX=$(jq -r '.data.allProjectReviewSummaries.nodes[0]?.projectReviewId // empty' "/tmp/van-pr-$PROG_ID.json" 2>/dev/null || true)
   if [ -n "$COACH_CTX" ]; then
     # Find context file by project_review_id
     ctx_file=$(grep -l "\"project_review_id\":.*\"$COACH_CTX\"" "$CONTEXT_DIR"/*.json 2>/dev/null | head -1 || true)

@@ -55,6 +55,10 @@ fetch 'query { allChatMessages(first: 50, orderBy: SUBSTRATE_BLOCK_NUMBER_DESC, 
   /tmp/van-chat-text.json &
 pid2=$!
 
+fetch 'query { allChatMessages(first: 50, orderBy: SUBSTRATE_BLOCK_NUMBER_DESC) { nodes { id msgId authorHandle body substrateBlockNumber } } }' \
+  /tmp/van-recent-chat.json &
+pid2b=$!
+
 fetch 'query { allProjectReviewSummaries(condition:{hidden:false,tombstoned:false}, orderBy:UPDATED_AT_DESC, first:50) { nodes { projectReviewId owner idea status latestGuidanceOutcome latestGuidance updatedAt } } }' \
   /tmp/van-pr.json &
 pid3=$!
@@ -69,11 +73,11 @@ fetch 'query { allProjectReviewGuidances(condition:{hidden:false,tombstoned:fals
   /tmp/van-pr-guidances.json &
 pid5=$!
 
-fetch 'query { allReviewSummaries(filter:{tombstoned:{equalTo:false}}, orderBy:UPDATED_AT_ASC, first:50) { nodes { programId reviewStatus submissionRevision updatedAt } } }' \
+fetch 'query { allReviewSummaries(filter:{tombstoned:{equalTo:false}}, orderBy:UPDATED_AT_DESC, first:50) { nodes { programId reviewStatus submissionRevision updatedAt } } }' \
   /tmp/van-reviews.json &
 pid6=$!
 
-wait $pid1 $pid2 $pid3 $pid4 $pid5 $pid6
+wait $pid1 $pid2 $pid2b $pid3 $pid4 $pid5 $pid6
 
 # ── Auto-update context files from on-chain data ────────────────────────────
 # This keeps `auto` fields fresh (status, guidance, comment_count, etc.)
@@ -106,7 +110,9 @@ context_index_refresh 2>/dev/null || true
 # ── Extract current data ──────────────────────────────────────────────────────
 CUR_MENTIONS=$(jq -r '.data.allChatMentions.nodes[]?.messageId // empty' /tmp/van-mentions.json | sort)
 CUR_BODY_MENTIONS=$(jq -r '.data.allChatMessages.nodes[]? | select(.authorHandle != "cerberus") | .id // empty' /tmp/van-chat-text.json | sort)
-CUR_MENTIONS=$(printf '%s\n%s' "$CUR_MENTIONS" "$CUR_BODY_MENTIONS" | sort -u)
+LAST_CERBERUS_BLOCK=$(jq -r '[.data.allChatMessages.nodes[]? | select(.authorHandle == "cerberus") | .substrateBlockNumber] | max // 0' /tmp/van-recent-chat.json 2>/dev/null || echo 0)
+CUR_THREAD_FOLLOWUPS=$(jq -r --argjson last "$LAST_CERBERUS_BLOCK" '.data.allChatMessages.nodes[]? | select(.authorHandle != "cerberus" and .substrateBlockNumber > $last) | .id // empty' /tmp/van-recent-chat.json | sort)
+CUR_MENTIONS=$(printf '%s\n%s\n%s' "$CUR_MENTIONS" "$CUR_BODY_MENTIONS" "$CUR_THREAD_FOLLOWUPS" | sort -u)
 
 CUR_GUIDANCE=$(jq -r '.data.allProjectReviewSummaries.nodes[]? | select(.latestGuidanceOutcome == null or .latestGuidanceOutcome == "NeedsChanges") | "\(.projectReviewId)@\(.updatedAt)"' /tmp/van-pr.json | sort)
 
@@ -275,6 +281,9 @@ if [ "$COUNT_MENTIONS" -gt 0 ]; then
     msg=$(jq -r --arg id "$id" '.data.allChatMentions.nodes[] | select(.messageId == $id) | "Mention: \(.messageId) in block \(.substrateBlockNumber)"' /tmp/van-mentions.json 2>/dev/null)
     if [ -z "$msg" ]; then
       msg=$(jq -r --arg id "$id" '.data.allChatMessages.nodes[] | select(.id == $id) | "From @\(.authorHandle) (msgId \(.msgId), block \(.substrateBlockNumber)):\n\(.body)"' /tmp/van-chat-text.json 2>/dev/null)
+    fi
+    if [ -z "$msg" ]; then
+      msg=$(jq -r --arg id "$id" '.data.allChatMessages.nodes[] | select(.id == $id) | "Thread follow-up from @\(.authorHandle) (msgId \(.msgId), block \(.substrateBlockNumber)):\n\(.body)"' /tmp/van-recent-chat.json 2>/dev/null)
     fi
     echo "  - $msg"
   done)"
