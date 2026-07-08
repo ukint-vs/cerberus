@@ -154,7 +154,7 @@ ALL_PROGRAM_IDS=$(echo "$NEW_SUBMITTED $NEW_REQUESTED $NEW_COMMENTED" | tr ' ' '
 
 for PROG_ID in $ALL_PROGRAM_IDS; do
   # Fetch application details
-  fetch "query { applicationByProgramId(programId: \"$PROG_ID\") { id handle githubUrl status owner joinedAt } }" \
+  fetch "query { applicationById(id: \"$PROG_ID\") { id handle githubUrl status owner } }" \
     "/tmp/van-app-$PROG_ID.json"
 
   # Fetch review thread
@@ -162,11 +162,11 @@ for PROG_ID in $ALL_PROGRAM_IDS; do
     "/tmp/van-review-thread-$PROG_ID.json"
 
   # Get app handle for chat lookup
-  APP_HANDLE=$(jq -r '.data.applicationByProgramId?.handle // ""' "/tmp/van-app-$PROG_ID.json")
-  APP_GITHUB=$(jq -r '.data.applicationByProgramId?.githubUrl // ""' "/tmp/van-app-$PROG_ID.json")
-  APP_OWNER=$(jq -r '.data.applicationByProgramId?.owner // ""' "/tmp/van-app-$PROG_ID.json")
-  APP_STATUS=$(jq -r '.data.applicationByProgramId?.status // "unknown"' "/tmp/van-app-$PROG_ID.json")
-  APP_JOINED=$(jq -r '.data.applicationByProgramId?.joinedAt // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_HANDLE=$(jq -r '.data.applicationById?.handle // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_GITHUB=$(jq -r '.data.applicationById?.githubUrl // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_OWNER=$(jq -r '.data.applicationById?.owner // ""' "/tmp/van-app-$PROG_ID.json")
+  APP_STATUS=$(jq -r '.data.applicationById?.status // "unknown"' "/tmp/van-app-$PROG_ID.json")
+  APP_JOINED=""
 
   # Fetch last 10 chat messages from this app's handle
   if [ -n "$APP_HANDLE" ]; then
