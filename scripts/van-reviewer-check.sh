@@ -23,7 +23,7 @@ fi
 eval "$(awk '/^```bash$/{f=1; next} /^```$/{if(f) exit} f' "$VAN_DIR/references/program-ids.md")"
 
 INDEXER="$INDEXER_GRAPHQL_URL"
-STATE_FILE="/tmp/van-reviewer-state.json"
+STATE_FILE="${STATE_FILE:-/tmp/van-reviewer-state.json}"
 COACH_HEX="0x8490e070d0664a3ca9498b244aeb5707515e261b9d2cba9e10b674ed6a2f905c"
 
 # ── Load project context library ─────────────────────────────────────────────

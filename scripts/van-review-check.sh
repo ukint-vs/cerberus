@@ -29,7 +29,7 @@ fi
 eval "$(awk '/^```bash$/{f=1; next} /^```$/{if(f) exit} f' "$VAN_DIR/references/program-ids.md")"
 
 INDEXER="$INDEXER_GRAPHQL_URL"
-STATE_FILE="/tmp/van-cerberus-state.json"
+STATE_FILE="${STATE_FILE:-/tmp/van-cerberus-state.json}"
 COACH_HEX="0x8490e070d0664a3ca9498b244aeb5707515e261b9d2cba9e10b674ed6a2f905c"
 
 # ── Load project context library ─────────────────────────────────────────────
@@ -239,26 +239,25 @@ else
   NEW_REPORTED_SUBMITTED="$REPORTED_SUBMITTED"
 fi
 
-jq -nc \
-  --arg mentions "$CUR_MENTIONS" \
-  --arg guidance "$CUR_GUIDANCE" \
-  --arg replies "$CUR_REPLIES" \
-  --arg submitted "$CUR_SUBMITTED" \
-  --arg r_mentions "$NEW_REPORTED_MENTIONS" \
-  --arg r_guidance "$NEW_REPORTED_GUIDANCE" \
-  --arg r_replies "$NEW_REPORTED_REPLIES" \
-  --arg r_submitted "$NEW_REPORTED_SUBMITTED" \
-  --arg ts "$NOW_TS" \
-  --arg thread "$THREAD_HISTORY" \
-  '{
-    last_seen: { mentions: $mentions, guidance: $guidance, replies: $replies, submitted: $submitted },
-    reported: { mentions: $r_mentions, guidance: $r_guidance, replies: $r_replies, submitted: $r_submitted },
-    reported_at: $ts,
-    thread: $thread
-  }' > "$STATE_FILE"
-
 # ── Report only if genuinely NEW items ────────────────────────────────────────
 if [ -z "$NEW_MENTIONS" ] && [ -z "$NEW_GUIDANCE" ] && [ -z "$NEW_REPLIES" ] && [ -z "$NEW_SUBMITTED" ]; then
+  jq -nc \
+    --arg mentions "$CUR_MENTIONS" \
+    --arg guidance "$CUR_GUIDANCE" \
+    --arg replies "$CUR_REPLIES" \
+    --arg submitted "$CUR_SUBMITTED" \
+    --arg r_mentions "$REPORTED_MENTIONS" \
+    --arg r_guidance "$REPORTED_GUIDANCE" \
+    --arg r_replies "$REPORTED_REPLIES" \
+    --arg r_submitted "$REPORTED_SUBMITTED" \
+    --arg ts "$NOW_TS" \
+    --arg thread "$THREAD_HISTORY" \
+    '{
+      last_seen: { mentions: $mentions, guidance: $guidance, replies: $replies, submitted: $submitted },
+      reported: { mentions: $r_mentions, guidance: $r_guidance, replies: $r_replies, submitted: $r_submitted },
+      reported_at: $ts,
+      thread: $thread
+    }' > "$STATE_FILE"
   exit 0  # silent — nothing to report
 fi
 
