@@ -53,7 +53,8 @@ cerberus/
 │   ├── index.json          #   auto-generated index
 │   ├── voting-archtype.md  #   voting/score/reputation pattern
 │   ├── dependency-check.md #   cross-project dependency pattern
-│   └── no-real-consumer-red-flag.md  # "why blockchain?" red flag
+│   ├── no-real-consumer-red-flag.md  # "why blockchain?" red flag
+│   └── payout-state-machine-and-artifact-consistency.md # economic settlement + public evidence
 ├── lib/
 │   └── context.sh          # shared bash library (project context + self-learning)
 ├── scripts/

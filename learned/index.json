@@ -1,0 +1,18 @@
+[
+  {
+    "name": "dependency-check",
+    "path": "dependency-check.md"
+  },
+  {
+    "name": "no-real-consumer-red-flag",
+    "path": "no-real-consumer-red-flag.md"
+  },
+  {
+    "name": "payout-state-machine-and-artifact-consistency",
+    "path": "payout-state-machine-and-artifact-consistency.md"
+  },
+  {
+    "name": "voting-archtype",
+    "path": "voting-archtype.md"
+  }
+]
