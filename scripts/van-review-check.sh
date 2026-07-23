@@ -401,6 +401,10 @@ Only create a new learned skill when the pattern is **verified** (you acted on i
 
 
 
+# Emit the report before persisting reported state. If stdout capture fails,
+# the next run must see the item again rather than silently consuming it.
+printf '%s\n' "$REPORT"
+
 # Update thread history (keep last 3)
 NEW_THREAD=$(printf '%s\n%s' "[$NOW_TS] $COUNT_MENTIONS mentions, $COUNT_GUIDANCE reviews, $COUNT_REPLIES replies, $COUNT_SUBMITTED apps" "$THREAD_HISTORY" | head -3)
 
@@ -421,5 +425,3 @@ jq -nc \
     reported_at: $ts,
     thread: $thread
   }' > "$STATE_FILE"
-
-echo "$REPORT"

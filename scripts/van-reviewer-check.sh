@@ -391,6 +391,10 @@ else
   NEW_REPORTED_COMMENTED="$REPORTED_COMMENTED"
 fi
 
+# Emit the report before persisting reported state. If stdout capture fails,
+# the next run must see the item again rather than silently consuming it.
+printf '%s\n' "$REPORT"
+
 jq -nc \
   --arg s "$CUR_SUBMITTED" \
   --arg rq "$CUR_REQUESTED" \
@@ -404,5 +408,3 @@ jq -nc \
     reported: {submitted:$rs,requested:$rrq,commented:$rc},
     reported_at:$ts
   }' > "$STATE_FILE"
-
-echo "$REPORT"
