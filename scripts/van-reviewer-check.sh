@@ -66,9 +66,9 @@ CUR_NEEDS_REVIEW=$(jq -r '
   | "\(.programId)@\(.submissionRevision // 0)@\(.reviewStatus)"
 ' /tmp/van-rs.json | sort -u)
 
-CUR_SUBMITTED=$(echo "$CUR_NEEDS_REVIEW" | grep "@Submitted$" || true)
-CUR_REQUESTED=$(echo "$CUR_NEEDS_REVIEW" | grep "@Requested$" || true)
-CUR_COMMENTED=$(echo "$CUR_NEEDS_REVIEW" | grep "@Commented$" || true)
+CUR_SUBMITTED=$(echo "$CUR_NEEDS_REVIEW" | grep "@Submitted$" | sort || true)
+CUR_REQUESTED=$(echo "$CUR_NEEDS_REVIEW" | grep "@Requested$" | sort || true)
+CUR_COMMENTED=$(echo "$CUR_NEEDS_REVIEW" | grep "@Commented$" | sort || true)
 
 # ── Step 3: Load state ────────────────────────────────────────────────────────
 LAST_SEEN_SUBMITTED=""
