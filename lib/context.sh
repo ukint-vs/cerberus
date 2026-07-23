@@ -39,7 +39,13 @@ context_save() {
   local handle="$1"
   local file="$CONTEXT_DIR/$handle.json"
   mkdir -p "$CONTEXT_DIR"
-  cat > "$file"
+  local tmp
+  tmp=$(mktemp "$CONTEXT_DIR/.${handle}.json.XXXXXX")
+  if ! cat > "$tmp"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  mv -f "$tmp" "$file"
   context_index_refresh
 }
 
@@ -133,8 +139,11 @@ context_index_refresh() {
   
   local now
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  local tmp
+  tmp=$(mktemp "$CONTEXT_DIR/.index.json.XXXXXX")
   jq -nc --argjson projects "$merged" --arg now "$now" \
-    '{version: 1, updated_at: $now, projects: $projects}' > "$INDEX_FILE"
+    '{version: 1, updated_at: $now, projects: $projects}' > "$tmp"
+  mv -f "$tmp" "$INDEX_FILE"
 }
 
 context_list() {
@@ -165,8 +174,11 @@ learned_index_refresh() {
       '{($n): {name: $n, description: $d, learned_at: $t}}')
     merged=$(echo "$merged" | jq --argjson e "$entry" '. * $e')
   done
+  local tmp
+  tmp=$(mktemp "$LEARNED_DIR/.index.json.XXXXXX")
   jq -nc --argjson skills "$merged" --arg now "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-    '{version: 1, updated_at: $now, skills: $skills}' > "$LEARNED_INDEX"
+    '{version: 1, updated_at: $now, skills: $skills}' > "$tmp"
+  mv -f "$tmp" "$LEARNED_INDEX"
 }
 
 # List all learned skills (stdout table)
